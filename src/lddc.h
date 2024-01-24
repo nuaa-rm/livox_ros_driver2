@@ -129,6 +129,7 @@ class Lddc final {
 #endif
 
   PublisherPtr GetCurrentPublisher(uint8_t index);
+  PublisherPtr GetCurrentPublisher2(uint8_t index);
   PublisherPtr GetCurrentImuPublisher(uint8_t index);
 
  private:
@@ -139,6 +140,7 @@ class Lddc final {
   double publish_frq_;
   uint32_t publish_period_ns_;
   std::string frame_id_;
+  uint8_t flag;
 
 #ifdef BUILDING_ROS1
   bool enable_lidar_bag_;
@@ -151,6 +153,7 @@ class Lddc final {
 #elif defined BUILDING_ROS2
   PublisherPtr private_pub_[kMaxSourceLidar];
   PublisherPtr global_pub_;
+  PublisherPtr global_pub_2;
   PublisherPtr private_imu_pub_[kMaxSourceLidar];
   PublisherPtr global_imu_pub_;
 #endif
