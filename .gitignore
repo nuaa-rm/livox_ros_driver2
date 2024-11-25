@@ -2,3 +2,4 @@
 build
 package.xml
 __pycache__
+.idea/
