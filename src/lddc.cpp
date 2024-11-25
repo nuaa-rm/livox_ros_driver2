@@ -674,7 +674,7 @@ std::shared_ptr<rclcpp::PublisherBase> Lddc::GetCurrentPublisher(uint8_t handle)
 std::shared_ptr<rclcpp::PublisherBase> Lddc::GetCurrentPublisher2(uint8_t handle) {
   uint32_t queue_size = kMinEthPacketQueueSize;
   if (use_multi_topic_) {
-    if (!private_pub_[handle]) {
+    if (!private_pub_2[handle]) {
       char name_str[48];
       memset(name_str, 0, sizeof(name_str));
 
@@ -683,7 +683,7 @@ std::shared_ptr<rclcpp::PublisherBase> Lddc::GetCurrentPublisher2(uint8_t handle
           ReplacePeriodByUnderline(ip_string).c_str());
       std::string topic_name(name_str);
       queue_size = queue_size * 2; // queue size is 64 for only one lidar
-      private_pub_[handle] = CreatePublisher(transfer_format_, topic_name, queue_size);
+      private_pub_2[handle] = CreatePublisher(transfer_format_, topic_name, queue_size);
     }
     return private_pub_[handle];
   } else {

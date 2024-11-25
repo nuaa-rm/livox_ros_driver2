@@ -152,6 +152,7 @@ class Lddc final {
   rosbag::Bag *bag_;
 #elif defined BUILDING_ROS2
   PublisherPtr private_pub_[kMaxSourceLidar];
+  PublisherPtr private_pub_2[kMaxSourceLidar];
   PublisherPtr global_pub_;
   PublisherPtr global_pub_2;
   PublisherPtr private_imu_pub_[kMaxSourceLidar];
