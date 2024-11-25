@@ -495,12 +495,12 @@ void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timest
   imu_msg.header.stamp = rclcpp::Time(timestamp);  // to ros time stamp
 #endif
 
-  imu_msg.angular_velocity.x = imu_data.gyro_y;
-  imu_msg.angular_velocity.y = imu_data.gyro_x;
-  imu_msg.angular_velocity.z = -imu_data.gyro_z;
-  imu_msg.linear_acceleration.x = imu_data.acc_y;
-  imu_msg.linear_acceleration.y = imu_data.acc_x;
-  imu_msg.linear_acceleration.z = -imu_data.acc_z;
+  imu_msg.angular_velocity.x = imu_data.gyro_x;
+  imu_msg.angular_velocity.y = imu_data.gyro_y;
+  imu_msg.angular_velocity.z = imu_data.gyro_z;
+  imu_msg.linear_acceleration.x = imu_data.acc_x;
+  imu_msg.linear_acceleration.y = imu_data.acc_y;
+  imu_msg.linear_acceleration.z = imu_data.acc_z;
 }
 
 void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index) {
@@ -679,7 +679,7 @@ std::shared_ptr<rclcpp::PublisherBase> Lddc::GetCurrentPublisher2(uint8_t handle
       memset(name_str, 0, sizeof(name_str));
 
       std::string ip_string = IpNumToString(lds_->lidars_[handle].handle);
-      snprintf(name_str, sizeof(name_str), "livox/lidar_%s",
+      snprintf(name_str, sizeof(name_str), "livox/lidar_PointCloud2_%s",
           ReplacePeriodByUnderline(ip_string).c_str());
       std::string topic_name(name_str);
       queue_size = queue_size * 2; // queue size is 64 for only one lidar
