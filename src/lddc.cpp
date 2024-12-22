@@ -497,8 +497,14 @@ void Lddc::PublishPclData(const uint8_t index, const uint64_t timestamp, const P
   return;
 }
 
-void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timestamp) {
-  imu_msg.header.frame_id = "livox_frame";
+void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timestamp, const uint8_t index) {
+  char name_str[48];
+  memset(name_str, 0, sizeof(name_str));
+  std::string ip_string = IpNumToString(lds_->lidars_[index].handle);
+  snprintf(name_str, sizeof(name_str), "livox_%s", ReplacePeriodByUnderline(ip_string).c_str());
+
+  imu_msg.header.frame_id = name_str;
+  //std::cout << "----------------------imu_frame_id: " << imu_msg.header.frame_id << "------------------------" << std::endl;
 
   timestamp = imu_data.time_stamp;
 #ifdef BUILDING_ROS1
@@ -524,7 +530,7 @@ void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index
 
   ImuMsg imu_msg;
   uint64_t timestamp;
-  InitImuMsg(imu_data, imu_msg, timestamp);
+  InitImuMsg(imu_data, imu_msg, timestamp, index);
 
 #ifdef BUILDING_ROS1
   PublisherPtr publisher_ptr = GetCurrentImuPublisher(index);
