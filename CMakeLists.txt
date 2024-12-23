@@ -38,6 +38,7 @@ if(ROS_EDITION STREQUAL "ROS1")
     message_generation
     rosbag
     pcl_ros
+    Eigen
   )
 
   ## Find pcl lib
@@ -227,6 +228,7 @@ else(ROS_EDITION STREQUAL "ROS2")
   find_package(std_msgs REQUIRED)
   find_package(builtin_interfaces REQUIRED)
   find_package(rosidl_default_generators REQUIRED)
+  find_package(Eigen REQUIRED)
 
   # check apr
   find_package(PkgConfig)
