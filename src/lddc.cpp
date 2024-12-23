@@ -161,36 +161,51 @@ void Lddc::DistributeImuData(void) {
   }
 }
 
+// void Lddc::PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar) {
+//   LidarDataQueue *p_queue1 = &lidar->data;
+//   LidarDataQueue *p_queue2 = &lidar->data;
+//   if (p_queue1 == nullptr || p_queue1->storage_packet == nullptr) {
+//     std::cout << "------------p_queue1点云为空----------" << std::endl;
+//     return;
+//   }
+//   if (p_queue2 == nullptr || p_queue2->storage_packet == nullptr) {
+//     std::cout << "------------p_queue2点云为空----------" << std::endl;
+//     return;
+//   }
+
+//   while (!lds_->IsRequestExit() && !QueueIsEmpty(p_queue1) && !QueueIsEmpty(p_queue2)) {
+//     if(use_multi_topic_){
+//       PublishCustomPointcloud(p_queue2, index);
+//       PublishPointcloud2(p_queue1, index);
+//     }
+//     else{
+//       if (kPointCloud2Msg == transfer_format_) {
+//         PublishPointcloud2(p_queue1, index);
+//       } else if (kLivoxCustomMsg == transfer_format_) {
+//         PublishCustomPointcloud(p_queue2, index);
+//         //PublishPointcloud2(p_queue, index);
+//       } else if (kPclPxyziMsg == transfer_format_) {
+//         PublishPclMsg(p_queue1, index);
+//       }
+//     }
+//   }
+// }
 void Lddc::PollingLidarPointCloudData(uint8_t index, LidarDevice *lidar) {
-  LidarDataQueue *p_queue1 = &lidar->data;
-  LidarDataQueue *p_queue2 = &lidar->data;
-  if (p_queue1 == nullptr || p_queue1->storage_packet == nullptr) {
-    std::cout << "------------p_queue1点云为空----------" << std::endl;
-    return;
-  }
-  if (p_queue2 == nullptr || p_queue2->storage_packet == nullptr) {
-    std::cout << "------------p_queue2点云为空----------" << std::endl;
+  LidarDataQueue *p_queue = &lidar->data;
+  if (p_queue == nullptr || p_queue->storage_packet == nullptr) {
     return;
   }
 
-  while (!lds_->IsRequestExit() && !QueueIsEmpty(p_queue1) && !QueueIsEmpty(p_queue2)) {
-    if(use_multi_topic_){
-      PublishCustomPointcloud(p_queue2, index);
-      PublishPointcloud2(p_queue1, index);
-    }
-    else{
-      if (kPointCloud2Msg == transfer_format_) {
-        PublishPointcloud2(p_queue1, index);
-      } else if (kLivoxCustomMsg == transfer_format_) {
-        PublishCustomPointcloud(p_queue2, index);
-        //PublishPointcloud2(p_queue, index);
-      } else if (kPclPxyziMsg == transfer_format_) {
-        PublishPclMsg(p_queue1, index);
-      }
+  while (!lds_->IsRequestExit() && !QueueIsEmpty(p_queue)) {
+    if (kPointCloud2Msg == transfer_format_) {
+      PublishPointcloud2(p_queue, index);
+    } else if (kLivoxCustomMsg == transfer_format_) {
+      PublishCustomPointcloud(p_queue, index);
+    } else if (kPclPxyziMsg == transfer_format_) {
+      PublishPclMsg(p_queue, index);
     }
   }
 }
-
 void Lddc::PollingLidarImuData(uint8_t index, LidarDevice *lidar) {
   LidarImuDataQueue& p_queue = lidar->imu_data;
   while (!lds_->IsRequestExit() && !p_queue.Empty()) {
@@ -221,14 +236,11 @@ void Lddc::PublishPointcloud2(LidarDataQueue *queue, uint8_t index) {
       printf("Publish point cloud2 failed, the pkg points is empty.\n");
       continue;
     }
+
     PointCloud2 cloud;
-    CustomMsg livox_msg;
     uint64_t timestamp = 0;
     InitPointcloud2Msg(pkg, cloud, timestamp);
     PublishPointcloud2Data(index, timestamp, cloud);
-    InitCustomMsg(livox_msg, pkg, index);
-    FillPointsToCustomMsg(livox_msg, pkg);
-    PublishCustomPointData(livox_msg, index);
   }
 }
 
@@ -240,11 +252,8 @@ void Lddc::PublishCustomPointcloud(LidarDataQueue *queue, uint8_t index) {
       printf("Publish custom point cloud failed, the pkg points is empty.\n");
       continue;
     }
+
     CustomMsg livox_msg;
-    PointCloud2 cloud;
-    uint64_t timestamp = 0;
-    InitPointcloud2Msg(pkg, cloud, timestamp);
-    PublishPointcloud2Data(index, timestamp, cloud);
     InitCustomMsg(livox_msg, pkg, index);
     FillPointsToCustomMsg(livox_msg, pkg);
     PublishCustomPointData(livox_msg, index);
