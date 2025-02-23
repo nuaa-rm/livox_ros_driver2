@@ -31,7 +31,6 @@
 #include <iomanip>
 #include <math.h>
 #include <stdint.h>
-#include <Eigen/Dense>
 
 #include "include/ros_headers.h"
 
@@ -502,8 +501,7 @@ void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timest
   char name_str[48];
   memset(name_str, 0, sizeof(name_str));
   std::string ip_string = IpNumToString(lds_->lidars_[index].handle);
-  std::string lidar_ip = ReplacePeriodByUnderline(ip_string).c_str();
-  snprintf(name_str, sizeof(name_str), "livox_%s", lidar_ip);
+  snprintf(name_str, sizeof(name_str), "livox_%s", ReplacePeriodByUnderline(ip_string).c_str());
 
   imu_msg.header.frame_id = name_str;
   //std::cout << "----------------------imu_frame_id: " << imu_msg.header.frame_id << "------------------------" << std::endl;
@@ -515,71 +513,12 @@ void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timest
   imu_msg.header.stamp = rclcpp::Time(timestamp);  // to ros time stamp
 #endif
 
-  //相关参数在这里修改
-  if(!is_set_imu_extrinsic_params_){
-    cos_roll_187_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    cos_pitch_187_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    cos_yaw_187_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    sin_roll_187_ = sin(static_cast<double>(0.0 * PI / 180.0));
-    sin_pitch_187_ = sin(static_cast<double>(0.0 * PI / 180.0));
-    sin_yaw_187_ = sin(static_cast<double>(0.0 * PI / 180.0));
-    cos_roll_104_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    cos_pitch_104_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    cos_yaw_104_ = cos(static_cast<double>(0.0 * PI / 180.0));
-    sin_roll_104_ = sin(static_cast<double>(0.0 * PI / 180.0));
-    sin_pitch_104_ = sin(static_cast<double>(0.0 * PI / 180.0));
-    sin_yaw_104_ = sin(static_cast<double>(0.0 * PI / 180.0));
-
-    imu_translation_187_[0] = 0.0;
-    imu_translation_187_[1] = 0.0;
-    imu_translation_187_[2] = 0.0;
-    imu_rotation_187_[0][0] = cos_pitch_187_ * cos_yaw_187_;
-    imu_rotation_187_[0][1] = sin_roll_187_ * sin_pitch_187_ * cos_yaw_187_ - cos_roll_187_ * sin_yaw_187_;
-    imu_rotation_187_[0][2] = cos_roll_187_ * sin_pitch_187_ * cos_yaw_187_ + sin_roll_187_ * sin_yaw_187_;
-    imu_rotation_187_[1][0] = cos_pitch_187_ * sin_yaw_187_;
-    imu_rotation_187_[1][1] = sin_roll_187_ * sin_pitch_187_ * sin_yaw_187_ + cos_roll_187_ * cos_yaw_187_;
-    imu_rotation_187_[1][2] = cos_roll_187_ * sin_pitch_187_ * sin_yaw_187_ - sin_roll_187_ * cos_yaw_187_;
-    imu_rotation_187_[2][0] = -sin_pitch_187_;
-    imu_rotation_187_[2][1] = sin_roll_187_ * cos_pitch_187_;
-    imu_rotation_187_[2][2] = cos_roll_187_ * cos_pitch_187_;
-
-    imu_translation_104_[0] = 0.0;
-    imu_translation_104_[1] = 0.0;
-    imu_translation_104_[2] = 0.0;
-    imu_rotation_104_[0][0] = cos_pitch_104_ * cos_yaw_104_;
-    imu_rotation_104_[0][1] = sin_roll_104_ * sin_pitch_104_ * cos_yaw_104_ - cos_roll_104_ * sin_yaw_104_;
-    imu_rotation_104_[0][2] = cos_roll_104_ * sin_pitch_104_ * cos_yaw_104_ + sin_roll_104_ * sin_yaw_104_;
-    imu_rotation_104_[1][0] = cos_pitch_104_ * sin_yaw_104_;
-    imu_rotation_104_[1][1] = sin_roll_104_ * sin_pitch_104_ * sin_yaw_104_ + cos_roll_104_ * cos_yaw_104_;
-    imu_rotation_104_[1][2] = cos_roll_104_ * sin_pitch_104_ * sin_yaw_104_ - sin_roll_104_ * cos_yaw_104_;
-    imu_rotation_104_[2][0] = -sin_pitch_104_;
-    imu_rotation_104_[2][1] = sin_roll_104_ * cos_pitch_104_;
-    imu_rotation_104_[2][2] = cos_roll_104_ * cos_pitch_104_;
-
-    is_set_imu_extrinsic_params_ = true;
-  }
-
   imu_msg.angular_velocity.x = imu_data.gyro_x;
   imu_msg.angular_velocity.y = imu_data.gyro_y;
   imu_msg.angular_velocity.z = imu_data.gyro_z;
-  Eigen::Vector3d acc(imu_data.acc_x, imu_data.acc_y, imu_data.acc_z);
-  if(lidar_ip == "192_168_1_187"){
-    Eigen::Matrix3d R {{imu_rotation_187_[0][0], imu_rotation_187_[0][1], imu_rotation_187_[0][2]},
-                       {imu_rotation_187_[1][0], imu_rotation_187_[1][1], imu_rotation_187_[1][2]},
-                       {imu_rotation_187_[2][0], imu_rotation_187_[2][1], imu_rotation_187_[2][2]}};// 3x3旋转矩阵
-    Eigen::Vector3d t {imu_translation_187_[0], imu_translation_187_[1], imu_translation_187_[2]}; // 3x1平移向量（仅用于加速度计数据）
-    acc = R * acc + t;
-  }
-  else if(lidar_ip == "192_168_1_104"){
-    Eigen::Matrix3d R {{imu_rotation_104_[0][0], imu_rotation_104_[0][1], imu_rotation_104_[0][2]},
-                       {imu_rotation_104_[1][0], imu_rotation_104_[1][1], imu_rotation_104_[1][2]},
-                       {imu_rotation_104_[2][0], imu_rotation_104_[2][1], imu_rotation_104_[2][2]}};// 3x3旋转矩阵
-    Eigen::Vector3d t {imu_translation_104_[0], imu_translation_104_[1], imu_translation_104_[2]}; // 3x1平移向量（仅用于加速度计数据）
-    acc = R * acc + t;
-  }
-  imu_msg.linear_acceleration.x = acc(0);
-  imu_msg.linear_acceleration.y = acc(1);
-  imu_msg.linear_acceleration.z = acc(2);
+  imu_msg.linear_acceleration.x = imu_data.acc_x;
+  imu_msg.linear_acceleration.y = imu_data.acc_y;
+  imu_msg.linear_acceleration.z = imu_data.acc_z;
 }
 
 void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index) {

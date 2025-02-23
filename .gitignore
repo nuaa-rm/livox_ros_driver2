@@ -3,3 +3,4 @@ build
 package.xml
 __pycache__
 .idea/
+cmake-build-debug-
