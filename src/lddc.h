@@ -26,7 +26,7 @@
 #define LIVOX_ROS_DRIVER2_LDDC_H_
 
 #include "include/livox_ros_driver2.h"
-
+// #include "comm/comm.h"
 #include "driver_node.h"
 #include "lds.h"
 
@@ -141,6 +141,15 @@ class Lddc final {
   uint32_t publish_period_ns_;
   std::string frame_id_;
   uint8_t flag;
+
+  double cos_roll_;
+  double sin_roll_;
+  double cos_pitch_;
+  double sin_pitch_;
+  double cos_yaw_;
+  double sin_yaw_;
+  bool is_set_imu_extrinsic_params_[kMaxSourceLidar] = {false};
+  ExtParameterDetailed imu_extrinsic_[kMaxSourceLidar];
 
 #ifdef BUILDING_ROS1
   bool enable_lidar_bag_;

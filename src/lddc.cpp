@@ -505,22 +505,54 @@ void Lddc::InitImuMsg(const ImuData& imu_data, ImuMsg& imu_msg, uint64_t& timest
 
   imu_msg.header.frame_id = name_str;
   //std::cout << "----------------------imu_frame_id: " << imu_msg.header.frame_id << "------------------------" << std::endl;
-
+  // double delta_time = static_cast<double>(imu_msg.header.stamp);
   timestamp = imu_data.time_stamp;
 #ifdef BUILDING_ROS1
   imu_msg.header.stamp = ros::Time(timestamp / 1000000000.0);  // to ros time stamp
 #elif defined BUILDING_ROS2
   imu_msg.header.stamp = rclcpp::Time(timestamp);  // to ros time stamp
 #endif
+  // delta_time -= static_cast<double>(imu_msg.header.stamp);
+// imu变换，只旋转，不平移
+if(!is_set_imu_extrinsic_params_[index]){
+    cos_roll_ = cos(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.roll * PI / 180.0));
+    cos_pitch_ = cos(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.pitch * PI / 180.0));
+    cos_yaw_ = cos(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.yaw * PI / 180.0));
+    sin_roll_ = sin(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.roll * PI / 180.0));
+    sin_pitch_ = sin(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.pitch * PI / 180.0));
+    sin_yaw_ = sin(static_cast<double>(lds_->lidars_[index].livox_config.extrinsic_param.yaw * PI / 180.0));
 
-  imu_msg.angular_velocity.x = imu_data.gyro_x;
-  imu_msg.angular_velocity.y = -imu_data.gyro_y;
-  imu_msg.angular_velocity.z = -imu_data.gyro_z;
-  imu_msg.linear_acceleration.x = imu_data.acc_x;
-  imu_msg.linear_acceleration.y = -imu_data.acc_y;
-  imu_msg.linear_acceleration.z = -imu_data.acc_z;
+    imu_extrinsic_[index].rotation[0][0] = cos_pitch_ * cos_yaw_;
+    imu_extrinsic_[index].rotation[0][1] = sin_roll_ * sin_pitch_ * cos_yaw_ - cos_roll_ * sin_yaw_;
+    imu_extrinsic_[index].rotation[0][2] = cos_roll_ * sin_pitch_ * cos_yaw_ + sin_roll_ * sin_yaw_;
+    imu_extrinsic_[index].rotation[1][0] = cos_pitch_ * sin_yaw_;
+    imu_extrinsic_[index].rotation[1][1] = sin_roll_ * sin_pitch_ * sin_yaw_ + cos_roll_ * cos_yaw_;
+    imu_extrinsic_[index].rotation[1][2] = cos_roll_ * sin_pitch_ * sin_yaw_ - sin_roll_ * cos_yaw_;
+    imu_extrinsic_[index].rotation[2][0] = -sin_pitch_;
+    imu_extrinsic_[index].rotation[2][1] = sin_roll_ * cos_pitch_;
+    imu_extrinsic_[index].rotation[2][2] = cos_roll_ * cos_pitch_;
+
+    is_set_imu_extrinsic_params_[index] = true;
+  }
+  imu_msg.angular_velocity.x = (imu_data.gyro_x * imu_extrinsic_[index].rotation[0][0] +
+                                imu_data.gyro_y * imu_extrinsic_[index].rotation[0][1] +
+                                imu_data.gyro_z * imu_extrinsic_[index].rotation[0][2] );
+  imu_msg.angular_velocity.y = (imu_data.gyro_x * imu_extrinsic_[index].rotation[1][0] +
+                                imu_data.gyro_y * imu_extrinsic_[index].rotation[1][1] +
+                                imu_data.gyro_z * imu_extrinsic_[index].rotation[1][2] );
+  imu_msg.angular_velocity.z = (imu_data.gyro_x * imu_extrinsic_[index].rotation[2][0] +
+                                imu_data.gyro_y * imu_extrinsic_[index].rotation[2][1] +
+                                imu_data.gyro_z * imu_extrinsic_[index].rotation[2][2] );
+  imu_msg.linear_acceleration.x = (imu_data.acc_x * imu_extrinsic_[index].rotation[0][0] +
+                                  imu_data.acc_y * imu_extrinsic_[index].rotation[0][1] +
+                                  imu_data.acc_z * imu_extrinsic_[index].rotation[0][2] );
+  imu_msg.linear_acceleration.y = (imu_data.acc_x * imu_extrinsic_[index].rotation[1][0] +
+                                  imu_data.acc_y * imu_extrinsic_[index].rotation[1][1] +
+                                  imu_data.acc_z * imu_extrinsic_[index].rotation[1][2] );
+  imu_msg.linear_acceleration.z = (imu_data.acc_x * imu_extrinsic_[index].rotation[2][0] +
+                                  imu_data.acc_y * imu_extrinsic_[index].rotation[2][1] +
+                                  imu_data.acc_z * imu_extrinsic_[index].rotation[2][2] );
 }
-
 void Lddc::PublishImuData(LidarImuDataQueue& imu_data_queue, const uint8_t index) {
   ImuData imu_data;
   if (!imu_data_queue.Pop(imu_data)) {

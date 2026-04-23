@@ -1,6 +1,9 @@
 mid360雷达驱动
 修改如下：1、以msg和rviz方式启动mid360,可以同时发送CustomMsg和PointCloud2消息
 	  2、修改雷达倒装时的imu数据
+    3、对imu数据进行旋转变换
+      imu会根据extrinsic_parameter进行旋转变换，但不会进行平移变换(涉及角加速度变换，要对角速度差分处理，没写)，
+      所以请保证在config.json中lidar_configs中使用imu数据的雷达的extrinsic_parameter的x,y,z均为0
 
 # Livox ROS Driver 2
 
